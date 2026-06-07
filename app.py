@@ -1,14 +1,16 @@
+# ---- LEAD CAPUTRE SYTEM FOR THINKLAR (CRM) ----
 # Bringing all the important Flask tools into our project
 from flask import Flask, render_template, request, redirect, flash, url_for
 import mysql.connector
 
+# --- FEATURE 1 START:  PYTHON KO LOCAL MYSQL SERVER SE CONNECT KARNA ---
 # Starting our Flask website engine
 app = Flask(__name__)
 
 # This is a secret key to make sure our popup messages and sessions stay secure
 app.secret_key = "thinklar_crm_secret_key"
 
-# 1.Making a reusable function to connect Python with our local MySQL database
+# Making a reusable function to connect Python with our local MySQL database
 def get_db_connection():
     return mysql.connector.connect(
         host="localhost",          
@@ -17,7 +19,9 @@ def get_db_connection():
         database="thinklar_crm"   
     )
 
-# 2. MAIN DASHBOARD: DATA FETCHING & SEARCH LOGIC
+
+# --- FEATURE 2 START:  MAIN DASHBOARD: DATA FETCHING & SEARCH LOGIC ---
+
 # Creating the main Home Page route 
 @app.route('/')
 def index():
@@ -49,3 +53,48 @@ def index():
         
     # Pull all the filtered rows from the database and save them in a Python bag
     leads_data = cursor.fetchall()
+
+
+# --- FEATURE 3 START: CALCULATING LIVE DASHBOARD COUNTS ---
+
+    # My Goal Here: I want to show 5 colored cards at the top of my website. 
+    # So, I need to ask MySQL to count the customers for each category right now.
+
+    # 1. Counting the total number of leads we have in the database
+    cursor.execute("SELECT COUNT(*) as total FROM leads")
+    total_count = cursor.fetchone()['total'] 
+    
+    # 2. Counting how many leads are completely 'New'
+    cursor.execute("SELECT COUNT(*) as new_count FROM leads WHERE status='New'")
+    new_count = cursor.fetchone()['new_count']
+    
+    # 3. Counting how many customers we have already 'Contacted'
+    cursor.execute("SELECT COUNT(*) as contacted_count FROM leads WHERE status='Contacted'")
+    contacted_count = cursor.fetchone()['contacted_count']
+    
+    # 4. Counting how many leads are successfully converted or 'Qualified'
+    cursor.execute("SELECT COUNT(*) as qualified_count FROM leads WHERE status='Qualified'")
+    qualified_count = cursor.fetchone()['qualified_count']
+    
+    # 5. Counting how many deals we have lost ('Lost')
+    cursor.execute("SELECT COUNT(*) as lost_count FROM leads WHERE status='Lost'")
+    lost_count = cursor.fetchone()['lost_count']
+
+    # Packing all these 5 counts into a single Python dictionary (packet)
+    metrics = {
+        'total': total_count,
+        'new': new_count,
+        'contacted': contacted_count,
+        'qualified': qualified_count,
+        'lost': lost_count
+    }
+
+    # Closing our database connection to keep the system fast and safe
+    cursor.close()
+    conn.close()
+# for remebering
+# execute("SELECT COUNT...") ──► MySQL ke pass gaye aur bola, "go and count the customers for me!"
+#fetchone()['...'] ──► Ginti ka answer uthakar Python ke variable mein save kiya.
+#metrics = {...} ──► Saare numbers ka ek packet banaya taaki HTML ko asani se parosa ja sake
+    
+   
