@@ -92,9 +92,25 @@ def index():
     # Closing our database connection to keep the system fast and safe
     cursor.close()
     conn.close()
+
 # for remebering
 # execute("SELECT COUNT...") ──► MySQL ke pass gaye aur bola, "go and count the customers for me!"
 #fetchone()['...'] ──► Ginti ka answer uthakar Python ke variable mein save kiya.
 #metrics = {...} ──► Saare numbers ka ek packet banaya taaki HTML ko asani se parosa ja sake
     
+    
+#  ---FEATURE 4: THE FINAL DELIVERY (LINKING BACKEND WITH FRONTEND)---
+# My Goal Here: Python has all the data, but the user sees nothing yet.
+# This final line delivers everything to the browser screen using 'index.html'.
+
+# Sending the HTML file along with our database table, counter box, and search text
+    return render_template(
+        'index.html', 
+        leads=leads_data,           # Giving the customer table data to HTML 'leads' variable
+        metrics=metrics,            # Giving the 5 counters packet to HTML's 'metrics' variable
+        search_query=search_query   # Keeping the searched text inside the search bar so it doesn't disappear
+    )
    
+#render_template('index.html') ─ Flask ko bole, "Browser par index.html ."
+#leads=leads_data - SQL se nikali hui table ko HTML ke loop se jor diya, jisse niche customers ki table ban gayi.
+#metrics=metrics ─ Ginti wale packet ko HTML ke cards se jor diya, jisse top par live numbers dikne lage 
