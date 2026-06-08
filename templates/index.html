@@ -82,6 +82,39 @@
                 
             </form>
         </div>
+        <!-- Leads Data Table -->
+        <div class="card shadow-sm rounded bg-white overflow-auto">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Mobile</th>
+                        <th>Company</th>
+                        <th>Source</th>
+                        <th>Status</th>
+                        <th style="width: 200px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lead in leads %}
+                    <tr>
+                        <td class="fw-bold">{{ lead.name }}</td>
+                        <td>{{ lead.email }}</td>
+                        <td>{{ lead.mobile }}</td>
+                        <td><span class="text-muted">{{ lead.company or '-' }}</span></td>
+                        <td><span class="badge bg-light text-dark border">{{ lead.source or 'Other' }}</span></td>
+                        <td>
+                            {% if lead.status == 'New' %}
+                                <span class="badge bg-warning text-dark">New</span>
+                            {% elif lead.status == 'Contacted' %}
+                                <span class="badge bg-info">Contacted</span>
+                            {% elif lead.status == 'Qualified' %}
+                                <span class="badge bg-success">Qualified</span>
+                            {% else %}
+                                <span class="badge bg-danger">Lost</span>
+                            {% endif %}
+                        </td>
         </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
