@@ -171,3 +171,32 @@ def add_lead():
 #request.form.get('name') ─ HTML form me se user ka likha hua naam nikaala.
 #conn.commit() ─ MySQL ko bola ki is naye data ko permanent register mein lock kar do. 
 #redirect(url_for('index')) ─ Data save hote hi user ko wapas main table wale dashboard par bhej diya.
+
+
+# ---FEATURE 6: UPDATING LEAD STATUS FROM THE DASHBOARD---
+# My Goal Here: When I change a customer's status (like from 'New' to 'Contacted') 
+# on the dashboard, I want to send that new status to MySQL and update it instantly.
+
+@app.route('/update_status/<int:lead_id>', methods=['POST'])
+def update_status(lead_id):
+    # 1. Grab the new status value that the user selected from the dropdown menu
+    new_status = request.form.get('status')
+    
+    # Open our MySQL pipeline and get our assistant (cursor) ready
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # SQL Update Query
+    cursor.execute("UPDATE leads SET status = %s WHERE id = %s", (new_status, lead_id))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    
+    flash("Lead Status Updated Successfully!", "success")
+        
+    # After updating, take the user right back to the fresh dashboard home page
+    return redirect(url_for('index'))
+
+1. #Dropdown Link ─ HTML ka name="status" aur Python ka request.form.get('status') ekdum same hone par hi data transfer hota hai.
+2. #Target Lock ─ Route mein <int:lead_id> isliye chahiye taaki Python ko pata rahe kis specific person ka status badalna hai.
+3. #Main Security ─ SQL Query mein WHERE id = %s likhna compulsory hai, nahi toh ek sath sabka status badal jayega.
