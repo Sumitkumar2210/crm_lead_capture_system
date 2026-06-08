@@ -200,3 +200,8 @@ def update_status(lead_id):
 1. #Dropdown Link ─ HTML ka name="status" aur Python ka request.form.get('status') ekdum same hone par hi data transfer hota hai.
 2. #Target Lock ─ Route mein <int:lead_id> isliye chahiye taaki Python ko pata rahe kis specific person ka status badalna hai.
 3. #Main Security ─ SQL Query mein WHERE id = %s likhna compulsory hai, nahi toh ek sath sabka status badal jayega.
+
+
+# ---THE MAIN SWITCH: STARTING OUR FLASK WEBSITE SERVER---
+if __name__ == '__main__':
+    app.run(debug=True)
