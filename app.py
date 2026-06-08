@@ -114,3 +114,60 @@ def index():
 #render_template('index.html') ─ Flask ko bole, "Browser par index.html ."
 #leads=leads_data - SQL se nikali hui table ko HTML ke loop se jor diya, jisse niche customers ki table ban gayi.
 #metrics=metrics ─ Ginti wale packet ko HTML ke cards se jor diya, jisse top par live numbers dikne lage 
+
+
+#  ---FEATURE 5: ADDING NEW CUSTOMERS TO THE DATABASE---
+# My Goal Here: Create a page with a form so users can type in new lead details,
+# and then save that information permanently inside our MySQL database.
+
+@app.route('/add', methods=['GET', 'POST'])
+def add_lead():
+    # 1. Checking if the user just submitted the form (POST method)
+    if request.method == 'POST':
+        # Grab all the text fields that the user typed into the form
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        mobile = request.form.get('mobile', '').strip()
+        company = request.form.get('company', '').strip()
+        source = request.form.get('source', '').strip()
+        
+        # Open our MySQL database door
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        try:
+            # Writing the SQL command to insert this new data safely using %s placeholders
+            query = """
+                INSERT INTO leads (name, email, mobile, company, source) 
+                VALUES (%s, %s, %s, %s, %s)
+            """
+            # Executing the query by passing our form data into the placeholders
+            cursor.execute(query, (name, email, mobile, company, source))
+            
+            # CRITICAL STEP: Telling MySQL to permanently save this change
+            conn.commit()
+            
+            # Show a nice success popup message on the screen
+            flash("Success! New lead has been added.", "success")
+            
+            # After saving, automatically take the user back to the home page dashboard
+            return redirect(url_for('index'))
+            
+        except mysql.connector.Error as err:
+            # If something goes wrong (like a duplicate email), show an error popup
+            flash(f"Error: Could not save lead. {err}", "danger")
+            return redirect(url_for('add_lead'))
+            
+        finally:
+            # Always close the database door
+            cursor.close()
+            conn.close()
+            
+    # 2. If the user is just visiting the page normally (GET method), show the blank form page
+    return render_template('add_lead.html')
+
+
+#request.method == 'POST' ─ Check kiya ki kya user ne "Save" button click hai?
+#request.form.get('name') ─ HTML form me se user ka likha hua naam nikaala.
+#conn.commit() ─ MySQL ko bola ki is naye data ko permanent register mein lock kar do. 
+#redirect(url_for('index')) ─ Data save hote hi user ko wapas main table wale dashboard par bhej diya.
