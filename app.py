@@ -20,9 +20,9 @@ def get_db_connection():
     )
 
 
-# --- FEATURE 2 START:  MAIN DASHBOARD: DATA FETCHING & SEARCH LOGIC ---
+ # --- FEATURE 2 START:  MAIN DASHBOARD: DATA FETCHING & SEARCH LOGIC ---
 
-# Creating the main Home Page route 
+ # Creating the main Home Page route 
 @app.route('/')
 def index():
     # Grab whatever text the user typed in the search bar, and clean any extra spaces
@@ -54,29 +54,28 @@ def index():
     # Pull all the filtered rows from the database and save them in a Python bag
     leads_data = cursor.fetchall()
 
-
-# --- FEATURE 3 START: CALCULATING LIVE DASHBOARD COUNTS ---
+  # --- FEATURE 3 START: CALCULATING LIVE DASHBOARD COUNTS ---
 
     # My Goal Here: I want to show 5 colored cards at the top of my website. 
     # So, I need to ask MySQL to count the customers for each category right now.
 
-    # 1. Counting the total number of leads we have in the database
+    # Counting the total number of leads we have in the database
     cursor.execute("SELECT COUNT(*) as total FROM leads")
     total_count = cursor.fetchone()['total'] 
     
-    # 2. Counting how many leads are completely 'New'
+    # Counting how many leads are completely 'New'
     cursor.execute("SELECT COUNT(*) as new_count FROM leads WHERE status='New'")
     new_count = cursor.fetchone()['new_count']
     
-    # 3. Counting how many customers we have already 'Contacted'
+    # Counting how many customers we have already 'Contacted'
     cursor.execute("SELECT COUNT(*) as contacted_count FROM leads WHERE status='Contacted'")
     contacted_count = cursor.fetchone()['contacted_count']
     
-    # 4. Counting how many leads are successfully converted or 'Qualified'
+    # Counting how many leads are successfully converted or 'Qualified'
     cursor.execute("SELECT COUNT(*) as qualified_count FROM leads WHERE status='Qualified'")
     qualified_count = cursor.fetchone()['qualified_count']
     
-    # 5. Counting how many deals we have lost ('Lost')
+    # Counting how many deals we have lost ('Lost')
     cursor.execute("SELECT COUNT(*) as lost_count FROM leads WHERE status='Lost'")
     lost_count = cursor.fetchone()['lost_count']
 
@@ -93,17 +92,17 @@ def index():
     cursor.close()
     conn.close()
 
-# for remebering
-# execute("SELECT COUNT...") ──► MySQL ke pass gaye aur bola, "go and count the customers for me!"
-#fetchone()['...'] ──► Ginti ka answer uthakar Python ke variable mein save kiya.
-#metrics = {...} ──► Saare numbers ka ek packet banaya taaki HTML ko asani se parosa ja sake
-    
-    
-#  ---FEATURE 4: THE FINAL DELIVERY (LINKING BACKEND WITH FRONTEND)---
-# My Goal Here: Python has all the data, but the user sees nothing yet.
-# This final line delivers everything to the browser screen using 'index.html'.
-
-# Sending the HTML file along with our database table, counter box, and search text
+ # for remebering
+ # execute("SELECT COUNT...") ──► MySQL ke pass gaye aur bola, "go and count the customers for me!"
+ #fetchone()['...'] ──► Ginti ka answer uthakar Python ke variable mein save kiya.
+ #metrics = {...} ──► Saare numbers ka ek packet banaya taaki HTML ko asani se parosa ja sake
+     
+     
+ #  ---FEATURE 4: THE FINAL DELIVERY (LINKING BACKEND WITH FRONTEND)---
+ # My Goal Here: Python has all the data, but the user sees nothing yet.
+ # This final line delivers everything to the browser screen using 'index.html'.
+ 
+ # Sending the HTML file along with our database table, counter box, and search text
     return render_template(
         'index.html', 
         leads=leads_data,           # Giving the customer table data to HTML 'leads' variable
@@ -111,71 +110,64 @@ def index():
         search_query=search_query   # Keeping the searched text inside the search bar so it doesn't disappear
     )
    
-#render_template('index.html') ─ Flask ko bole, "Browser par index.html ."
-#leads=leads_data - SQL se nikali hui table ko HTML ke loop se jor diya, jisse niche customers ki table ban gayi.
-#metrics=metrics ─ Ginti wale packet ko HTML ke cards se jor diya, jisse top par live numbers dikne lage 
-
-
-#  ---FEATURE 5: ADDING NEW CUSTOMERS TO THE DATABASE---
-# My Goal Here: Create a page with a form so users can type in new lead details,
-# and then save that information permanently inside our MySQL database.
-
+ #render_template('index.html') ─ Flask ko bole, "Browser par index.html ."
+ #leads=leads_data - SQL se nikali hui table ko HTML ke loop se jor diya, jisse niche customers ki table ban gayi.
+ #metrics=metrics ─ Ginti wale packet ko HTML ke cards se jor diya, jisse top par live numbers dikne lage 
+ 
+ 
+ #  ---FEATURE 5: ADDING NEW CUSTOMERS TO THE DATABASE---
+ # My Goal Here: Create a page with a form so users can type in new lead details,
+ # and then save that information permanently inside our MySQL database.
+ 
 @app.route('/add', methods=['GET', 'POST'])
 def add_lead():
     # 1. Checking if the user just submitted the form (POST method)
     if request.method == 'POST':
-        # Grab all the text fields that the user typed into the form
-        name = request.form.get('name', '').strip()
-        email = request.form.get('email', '').strip()
-        mobile = request.form.get('mobile', '').strip()
-        company = request.form.get('company', '').strip()
-        source = request.form.get('source', '').strip()
+        name = request.form['name'].strip()
+        email = request.form['email'].strip()
+        mobile = request.form['mobile'].strip()
+        company = request.form['company'].strip() or None
+        source = request.form['source']
+        status = request.form['status']
         
-        # Open our MySQL database door
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
+        # Core Frontend & Backend Validation
+        if not name or not email or not mobile:
+            flash("Name, Email, and Mobile are required fields!", "danger")
+            return redirect(url_for('add_lead'))
+            
         try:
-            # Writing the SQL command to insert this new data safely using %s placeholders
-            query = """
-                INSERT INTO leads (name, email, mobile, company, source) 
-                VALUES (%s, %s, %s, %s, %s)
-            """
-            # Executing the query by passing our form data into the placeholders
-            cursor.execute(query, (name, email, mobile, company, source))
+            conn = get_db_connection()
+            cursor = conn.cursor()
             
-            # CRITICAL STEP: Telling MySQL to permanently save this change
+            # SQL Insert Query [cite: 227]
+            cursor.execute(
+                """INSERT INTO leads (name, email, mobile, company, source, status) 
+                   VALUES (%s, %s, %s, %s, %s, %s)""",
+                (name, email, mobile, company, source, status)
+            )
             conn.commit()
-            
-            # Show a nice success popup message on the screen
-            flash("Success! New lead has been added.", "success")
-            
-            # After saving, automatically take the user back to the home page dashboard
+            cursor.close()
+            conn.close()
+            flash("New Lead Captured Successfully!", "success")
             return redirect(url_for('index'))
             
         except mysql.connector.Error as err:
-            # If something goes wrong (like a duplicate email), show an error popup
-            flash(f"Error: Could not save lead. {err}", "danger")
-            return redirect(url_for('add_lead'))
-            
-        finally:
-            # Always close the database door
-            cursor.close()
-            conn.close()
-            
-    # 2. If the user is just visiting the page normally (GET method), show the blank form page
+            # Email unique constraint error handle karna [cite: 202, 253]
+            flash("Error: Duplicate Entry! This email is already registered.", "danger")
+            return redirect(url_for('add_lead'))        
+    # If the user is just visiting the page normally (GET method), show the blank form page
     return render_template('add_lead.html')
 
 
-#request.method == 'POST' ─ Check kiya ki kya user ne "Save" button click hai?
-#request.form.get('name') ─ HTML form me se user ka likha hua naam nikaala.
-#conn.commit() ─ MySQL ko bola ki is naye data ko permanent register mein lock kar do. 
-#redirect(url_for('index')) ─ Data save hote hi user ko wapas main table wale dashboard par bhej diya.
+ #request.method == 'POST' ─ Check kiya ki kya user ne "Save" button click hai?
+ #request.form.get('name') ─ HTML form me se user ka likha hua naam nikaala.
+ #conn.commit() ─ MySQL ko bola ki is naye data ko permanent register mein lock kar do. 
+ #redirect(url_for('index')) ─ Data save hote hi user ko wapas main table wale dashboard par bhej diya.
 
 
-# ---FEATURE 6: UPDATING LEAD STATUS FROM THE DASHBOARD---
-# My Goal Here: When I change a customer's status (like from 'New' to 'Contacted') 
-# on the dashboard, I want to send that new status to MySQL and update it instantly.
+ # ---FEATURE 6: UPDATING LEAD STATUS FROM THE DASHBOARD---
+ # My Goal Here: When I change a customer's status (like from 'New' to 'Contacted') 
+ # on the dashboard, I want to send that new status to MySQL and update it instantly.
 
 @app.route('/update_status/<int:lead_id>', methods=['POST'])
 def update_status(lead_id):
@@ -197,11 +189,11 @@ def update_status(lead_id):
     # After updating, take the user right back to the fresh dashboard home page
     return redirect(url_for('index'))
 
-1. #Dropdown Link ─ HTML ka name="status" aur Python ka request.form.get('status') ekdum same hone par hi data transfer hota hai.
-2. #Target Lock ─ Route mein <int:lead_id> isliye chahiye taaki Python ko pata rahe kis specific person ka status badalna hai.
-3. #Main Security ─ SQL Query mein WHERE id = %s likhna compulsory hai, nahi toh ek sath sabka status badal jayega.
+ #Dropdown Link ─ HTML ka name="status" aur Python ka request.form.get('status') ekdum same hone par hi data transfer hota hai.
+ #Target Lock ─ Route mein <int:lead_id> isliye chahiye taaki Python ko pata rahe kis specific person ka status badalna hai.
+ #Main Security ─ SQL Query mein WHERE id = %s likhna compulsory hai, nahi toh ek sath sabka status badal jayega.
 
 
-# ---THE MAIN SWITCH: STARTING OUR FLASK WEBSITE SERVER---
+  # ---THE MAIN SWITCH: STARTING OUR FLASK WEBSITE SERVER---
 if __name__ == '__main__':
     app.run(debug=True)
